@@ -1,0 +1,8 @@
+Currently looks at the portfolio and gives advice only based off the stocks present in the portfolio whether to drop/buy
+Further Scope:
+Use adv statistical models instead of llm calls for price predictions (Stacked LSTMs, FinBERT, etc.) 
+Implement a system where the app gives suggestions to invest in stocks not present in the portfolio based off news articles and the goals set by the person 
+Works on a very particular csv format for now. Should be able to convert any type of portfolio into the deservrd type
+
+
+json and code agents
