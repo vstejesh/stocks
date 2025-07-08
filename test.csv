@@ -1,6 +1,6 @@
 Ticker,Company Name,Shares Held,Buy Price,Current Price,Sector,Purchase Date
-INFY,Infosys Ltd,100,1350.50,1452.30,Information Technology,2023-08-10
-TCS,Tata Consultancy Services,50,3200.00,3350.10,Information Technology,2023-05-15
-RELIANCE,Reliance Industries,20,2500.00,2598.75,Energy,2022-12-01
-HDFCBANK,HDFC Bank,75,1450.00,1482.50,Financial Services,2023-01-20
-ITC,ITC Ltd,150,380.00,452.00,Consumer Goods,2023-03-05
+AAPL,Apple Inc.,50,150.00,195.00,Technology,2023-06-15
+MSFT,Microsoft Corporation,40,280.00,345.00,Technology,2023-05-10
+GOOGL,Alphabet Inc. (Class A),30,120.00,135.00,Communication Services,2023-07-01
+AMZN,Amazon.com Inc.,25,3100.00,3700.00,Consumer Discretionary,2022-11-20
+TSLA,Tesla Inc.,60,700.00,820.00,Consumer Discretionary,2023-01-05

@@ -1,4 +1,3 @@
-# All classes used in the app are defined here.
 from typing import TypedDict, Annotated
 import pandas as pd
 import operator
@@ -32,5 +31,5 @@ class AppState(TypedDict):
     investment_horizon: str  # "Short-term", "Medium-term", "Long-term"
     portfolio: list[StockInfo]
     summary: PortfolioSummary
-    final_response: Annotated[list[AnyMessage], operator.add]
-    messages: Annotated[list[AnyMessage], operator.add]
+    # final_response: Annotated[list[AnyMessage], operator.add]
+    # messages: Annotated[list[AnyMessage], operator.add]
