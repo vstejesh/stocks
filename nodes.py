@@ -69,6 +69,7 @@ def price_history_node(state: AppState) -> dict:
             price_df = get_price_history(ticker, start=start_date, end=end_date)
             print(f"{ticker} — rows fetched: {len(price_df)}")
             stock["prices"] = price_df
+            # print(price_df.head(2))
         except Exception as e:
             print(f"Error fetching price history for {ticker} - {e}")
             stock["prices"] = pd.DataFrame()  # fallback
@@ -88,7 +89,7 @@ def news_fetch_node(state: AppState) -> dict:
             news_df = get_news(ticker)
             stock["news"] = news_df
             print(f"Fetching news for: {ticker}")
-            print(news_df.head())
+            # print(news_df.head())
         except Exception as e:
             stock["news"] = pd.DataFrame()  # fallback
         updated_portfolio.append(stock)
@@ -101,13 +102,16 @@ def price_analysis_node(state: AppState) -> dict:
 
     for stock in state["portfolio"]:
         ticker = stock["ticker"]
+        print(f"\nAnalyzing price data for: {ticker}")
         if stock["prices"].empty:
             stock["price_analyst_report"] = "No price data available"
             updated_portfolio.append(stock)
+            print("erroor")
             continue
         try:
             # Simulate a price analysis report
             report= get_price_analysis(ticker, stock["prices"])
+            print("log test")
             stock["price_analyst_report"] = report
             print(f"Price analysis for {ticker} completed successfully.")
         except Exception as e:
@@ -142,7 +146,11 @@ def stock_advice_node(state: AppState) -> dict:
         ticker = stock["ticker"]
         try:
             # Simulate a stock advice report
-            recommendation = get_stock_advice(ticker, stock["price_analyst_report"], stock["news_analyst_report"])
+            risk_tolerance = state["risk_tolerance"]
+            horizon = state["investment_horizon"]
+            objective = state.get("objective", "Balanced")
+            liquidity_needs = state.get("liquidity_needs", "Medium")
+            recommendation = get_stock_advice(ticker, stock["price_analyst_report"], stock["news_analyst_report"], risk_tolerance, horizon, objective, liquidity_needs)
             stock["recommendation"] = recommendation
             print(f"Advice for {ticker}: {recommendation}")
         except Exception as e:
@@ -152,9 +160,13 @@ def stock_advice_node(state: AppState) -> dict:
     return {"portfolio": updated_portfolio}
 
 def summarize_node(state: AppState) -> dict:
+    updated_summary= {}
+
     portfolio = state["portfolio"]
     risk_tolerance = state["risk_tolerance"]
     horizon = state["investment_horizon"]
+    objective = state.get("objective", "Balanced")
+    liquidity_needs = state.get("liquidity_needs", "Medium")
 
     total_investment = sum(stock["shares_held"] * stock["buy_price"] for stock in portfolio)
     current_value = sum(stock["shares_held"] * stock["current_price"] for stock in portfolio)
@@ -197,6 +209,8 @@ def summarize_node(state: AppState) -> dict:
 
         Risk Tolerance: {risk_tolerance}
         Investment Horizon: {horizon}
+        Objective: {objective}
+        Liquidity Needs: {liquidity_needs}
         Total Investment: ₹{total_investment}
         Current Value: ₹{current_value}
         Profit/Loss: ₹{profit_loss} ({profit_loss_percent:.2f}%)
@@ -206,10 +220,17 @@ def summarize_node(state: AppState) -> dict:
         Here are the individual stock summaries:
         {stock_summary_text}
 
-        Give a professional yet actionable final summary on whether the portfolio should be rebalanced, held, or revised. Keep it concise and insightful based on the overall risk and performance. Avoid generic statements.
-
+        Based on the data given, generate a comprehensive summary of the portfolio.
+        Include:
+        - Overall performance and key metrics
+        - Risk assessment and recommendations
+        - Any notable trends or insights
+        - Suggestions for future actions based on the risk tolerance and investment horizon
+        - Also consider the individual stock advicecs provided. If there are any stocks with significant issues or recommendations, highlight them.
+        - Also, provide a final recommendation on whether the user should rebalance, hold, or take any specific actions with their portfolio.
+        - You should also relate the risk score to the risk tolerance and investment horizon provided.
         """,
-        input_variables=["risk_tolerance", "horizon", "total_investment", "current_value",
+        input_variables=["risk_tolerance", "horizon", "objective", "liquidity_needs","total_investment", "current_value",
                         "profit_loss", "profit_loss_percent", "diversification",
                         "risk_score", "stock_summary_text"]
     )
@@ -219,6 +240,8 @@ def summarize_node(state: AppState) -> dict:
     result = chain.invoke({
         "risk_tolerance":risk_tolerance,
         "horizon":horizon,
+        "objective":objective,
+        "liquidity_needs":liquidity_needs,
         "total_investment":round(total_investment, 2),
         "current_value":round(current_value, 2),
         "profit_loss":round(profit_loss, 2),
@@ -228,4 +251,7 @@ def summarize_node(state: AppState) -> dict:
         "stock_summary_text":stock_summary_text 
     })
     
+    updated_summary= result.content
+    print(f"Final summary generated: {updated_summary}")
+    return {"summary": updated_summary}
     

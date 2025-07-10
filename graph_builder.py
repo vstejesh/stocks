@@ -12,7 +12,7 @@ from nodes import (
     news_analysis_node,
     stock_advice_node,
     summarize_node,
-    final_response_node
+    # final_response_node
 )
 
 # 1. Initialize the graph
@@ -40,7 +40,7 @@ builder.add_edge("news_analyzer", "stock_adviser")
 builder.add_edge("stock_adviser", "portfolio_summary")
 # builder.add_edge("portfolio_summary", "final_response")
 
-builder.set_finish_point("final_response")
+builder.set_finish_point("portfolio_summary")
 
 # 4. Build the graph
-graph = builder.build()
+graph = builder.compile()

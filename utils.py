@@ -6,7 +6,7 @@ from datetime import timedelta, datetime
 import finnhub
 import os
 from dotenv import load_dotenv
-from langchain_core import HumanMessage
+# from langchain_core import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
 from langchain_groq import ChatGroq
@@ -120,13 +120,14 @@ def get_price_analysis(ticker: str, prices: pd.DataFrame) -> str:
     '''
     if prices.empty:
         return "No price data available"
-
-    csv_data = prices.reset_index().to_csv(index=False)
+    print(len(prices))
+    # csv_data = prices.reset_index().to_csv(index=False)
+    # print(csv_data[:15])  # first 300 characters of the CSV
 
     # Simulate a price analysis report
     prompt=PromptTemplate(
         template="""
-        You are a highly skilled and detail-oriented financial analyst and equity researcher. You have been given a csv file named {prices} that contains 4 months of historical daily stock price data for the company {ticker}. The DataFrame contains the following columns:
+        You are a highly skilled and detail-oriented financial analyst and equity researcher. You have been given a pandas dataframe named {prices} that contains 4 months of historical daily stock price data for the company {ticker}. The DataFrame contains the following columns:
 
         - `date`: trading date (string, format YYYY-MM-DD)
         - `open`: opening price of the stock
@@ -191,11 +192,12 @@ def get_price_analysis(ticker: str, prices: pd.DataFrame) -> str:
         Avoid financial advice. Focus purely on data analysis and chart-based behavior. Be precise with your answers, using the data provided in the CSV file.
         Output your findings in a structured point wise format so it could be used as a prompt for further analysis or decision-making.
         """,
-        input_variables=["prices"]
+        input_variables=["prices","ticker"]
     )
     chain = prompt | llm
-    result = chain.invoke({"prices": csv_data})
+    result = chain.invoke({"prices": prices, "ticker": ticker})
 
+    print("log test")
     return result.content
 
 def get_news_analysis(ticker: str, news: pd.DataFrame) -> str:
@@ -212,11 +214,11 @@ def get_news_analysis(ticker: str, news: pd.DataFrame) -> str:
     if news.empty:
         return "No news data available"
 
-    csv_data = news.reset_index().to_csv(index=False)
+    # csv_data = news.reset_index().to_csv(index=False)
 
     prompt=PromptTemplate(
         template="""
-        You are a financial analyst specializing in market sentiment analysis. You have been given a csv file named {news} that contains recent news articles related to the company {ticker}. The DataFrame contains the following columns:
+        You are a financial analyst specializing in market sentiment analysis. You have been given a pd dataframe named {news} that contains recent news articles related to the company {ticker}. The DataFrame contains the following columns:
 
         - `datetime`: date and time of the article
         - `headline`: title of the article
@@ -263,10 +265,10 @@ def get_news_analysis(ticker: str, news: pd.DataFrame) -> str:
         input_variables=["news"]
     )
     chain = prompt | llm
-    result = chain.invoke({"news": csv_data})
+    result = chain.invoke({"news": news, "ticker": ticker})
     return result.content
 
-def get_stock_advice(ticker:str, price_analysis: str, news_analysis: str, risk_tolerance: str, investment_horizon: str) -> str:
+def get_stock_advice(ticker:str, price_analysis: str, news_analysis: str, risk_tolerance: str, investment_horizon: str, objective: str, liquidity_needs:str) -> str:
     '''
     # Generate stock advice based on price and news analysis.
 
@@ -303,6 +305,13 @@ def get_stock_advice(ticker:str, price_analysis: str, news_analysis: str, risk_t
         ### Investment Horizon
         {investment_horizon}
 
+        ### Objective
+        {objective} 
+
+        ### Liquidity Needs
+        {liquidity_needs}
+
+
         Your task is to provide a concise recommendation for investors. Consider the following:
 
         - Current market conditions and trends
@@ -314,7 +323,7 @@ def get_stock_advice(ticker:str, price_analysis: str, news_analysis: str, risk_t
         You should clearly mention the analysis that led to your recommendation. 
         In short you should briefly explain both price and news analyses and how they relate to the recommendation.
         """,
-        input_variables=["ticker", "price_analysis", "news_analysis", "risk_tolerance", "investment_horizon"]
+        input_variables=["ticker", "price_analysis", "news_analysis", "risk_tolerance", "investment_horizon", "objective", "liquidity_needs"]
     )
     
     chain = prompt | llm
@@ -323,7 +332,9 @@ def get_stock_advice(ticker:str, price_analysis: str, news_analysis: str, risk_t
         "price_analysis": price_analysis,
         "news_analysis": news_analysis,
         "risk_tolerance": risk_tolerance,
-        "investment_horizon": investment_horizon
+        "investment_horizon": investment_horizon,
+        "objective": objective,
+        "liquidity_needs": liquidity_needs
     })
     
     return result.content

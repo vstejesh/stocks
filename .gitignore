@@ -6,3 +6,5 @@ __pycache__/
 .DS_Store
 temp.py
 .ruff_cache/
+temp2.py
+temp3.py
