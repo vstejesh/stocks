@@ -16,6 +16,7 @@ import os
 from langchain_core.messages import AnyMessage  # if you're using LangGraph
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
+from openbb import obb
 
 llm = ChatGroq(
     temperature=0.35,
@@ -159,6 +160,49 @@ def stock_advice_node(state: AppState) -> dict:
 
     return {"portfolio": updated_portfolio}
 
+def suggest_stocks_node(state: AppState) -> dict:
+    suggestions= []
+    current_tickers = {stock["ticker"] for stock in state["portfolio"]}
+    risk = state.get("risk_tolerance", "Medium")
+    horizon = state.get("investment_horizon", "Medium-term")
+
+    if risk == "Low" and "Long" in horizon:
+        filters = ["volatility < 0.03", "marketCap > 10000000000", "valuation.pe < 20"]
+        category = "Stable Long-Term"
+    elif risk == "High" and "Short" in horizon:
+        filters = ["performance.6month > 30", "volatility > 0.05"]
+        category = "High-Risk Growth"
+    else:
+        filters = ["performance.year1 > 15", "volatility < 0.05"]
+        category = "Balanced Picks"
+
+    try:
+        screener_df = obb.stocks.screener(limit=20, filters=filters)
+
+        for _, row in screener_df.iterrows():
+            ticker = row["symbol"]
+            if ticker in current_tickers:
+                continue
+
+            suggestion = {
+                "ticker": ticker,
+                "category": category,
+                "reason": f"Matches your profile: {risk} risk, {horizon} investment",
+            }
+
+            try:
+                news = obb.stocks.news(ticker)
+                suggestion["news"] = news["title"].head(2).tolist() if "title" in news else []
+            except Exception:
+                suggestion["news"] = []
+
+            suggestions.append(suggestion)
+
+    except Exception as e:
+        print(f"Error fetching suggestions: {e}")   
+
+    return{"suggestions":suggestions}     
+
 def summarize_node(state: AppState) -> dict:
     updated_summary= {}
 
@@ -167,6 +211,7 @@ def summarize_node(state: AppState) -> dict:
     horizon = state["investment_horizon"]
     objective = state.get("objective", "Balanced")
     liquidity_needs = state.get("liquidity_needs", "Medium")
+    suggestions= state["suggestions"]
 
     total_investment = sum(stock["shares_held"] * stock["buy_price"] for stock in portfolio)
     current_value = sum(stock["shares_held"] * stock["current_price"] for stock in portfolio)
@@ -220,19 +265,23 @@ def summarize_node(state: AppState) -> dict:
         Here are the individual stock summaries:
         {stock_summary_text}
 
+        Here are suggested stocks based on the portfolio: {suggestions}
+
         Based on the data given, generate a comprehensive summary of the portfolio.
         Include:
         - Overall performance and key metrics
         - Risk assessment and recommendations
         - Any notable trends or insights
-        - Suggestions for future actions based on the risk tolerance and investment horizon
-        - Also consider the individual stock advicecs provided. If there are any stocks with significant issues or recommendations, highlight them.
+        - Also check if the portfolio needs any diversification in sectors, in case if it is needed
+        - Suggestions for future actions based on the risk tolerance and investment horizon.
+        - Also check if any of the system suggested stocks other than the existing tickers are relevant to the portfolio. If yes, then suggest and explain why.
+        - Also consider the individual stock advicecs provided, wherein If there are any stocks with significant issues or recommendations, highlight them.
         - Also, provide a final recommendation on whether the user should rebalance, hold, or take any specific actions with their portfolio.
         - You should also relate the risk score to the risk tolerance and investment horizon provided.
         """,
         input_variables=["risk_tolerance", "horizon", "objective", "liquidity_needs","total_investment", "current_value",
                         "profit_loss", "profit_loss_percent", "diversification",
-                        "risk_score", "stock_summary_text"]
+                        "risk_score", "stock_summary_text", "suggestions"]
     )
 
     chain = prompt | llm
@@ -248,7 +297,8 @@ def summarize_node(state: AppState) -> dict:
         "profit_loss_percent":profit_loss_percent,
         "diversification":diversification,
         "risk_score":risk_score,
-        "stock_summary_text":stock_summary_text 
+        "stock_summary_text":stock_summary_text,
+        "suggestions": suggestions
     })
     
     updated_summary= result.content

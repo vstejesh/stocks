@@ -31,6 +31,7 @@ class AppState(TypedDict):
     investment_horizon: str  # "Short-term", "Medium-term", "Long-term"
     objective: str  # "Growth", "Income", "Balanced"
     liquidity_needs: str  # "High", "Medium", "Low"
+    suggestions: list
     portfolio: list[StockInfo]
     summary: PortfolioSummary
     # final_response: Annotated[list[AnyMessage], operator.add]
